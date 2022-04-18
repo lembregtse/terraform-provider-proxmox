@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	pxapi "github.com/Telmate/proxmox-api-go/proxmox"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	pxapi "github.com/lembregtse/proxmox-api-go/proxmox"
 )
 
 // using a global variable here so that we have an internally accessible
@@ -68,6 +68,12 @@ func resourceVmQemu() *schema.Resource {
 				Default:          "seabios",
 				Description:      "The VM bios, it can be seabios or ovmf",
 				ValidateDiagFunc: BIOSValidator(),
+			},
+			"smbios1": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: "The VM smbios1, it can be any string combined of the correct parameters",
 			},
 			"onboot": {
 				Type:        schema.TypeBool,
@@ -742,6 +748,7 @@ func resourceVmQemuCreate(d *schema.ResourceData, meta interface{}) error {
 		Description:  d.Get("desc").(string),
 		Pool:         d.Get("pool").(string),
 		Bios:         d.Get("bios").(string),
+		Smbios1:      d.Get("smbios1").(string),
 		Onboot:       d.Get("onboot").(bool),
 		Tablet:       d.Get("tablet").(bool),
 		Boot:         d.Get("boot").(string),
@@ -1050,6 +1057,7 @@ func resourceVmQemuUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		Description:  d.Get("desc").(string),
 		Pool:         d.Get("pool").(string),
 		Bios:         d.Get("bios").(string),
+		Smbios1:      d.Get("smbios1").(string),
 		Onboot:       d.Get("onboot").(bool),
 		Tablet:       d.Get("tablet").(bool),
 		Boot:         d.Get("boot").(string),
@@ -1138,6 +1146,7 @@ func resourceVmQemuUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 	// If any of the "critical" keys are changed then a reboot is required.
 	if d.HasChanges(
 		"bios",
+		"smbios1",
 		"boot",
 		"bootdisk",
 		"agent",
@@ -1355,6 +1364,7 @@ func _resourceVmQemuRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", config.Name)
 	d.Set("desc", config.Description)
 	d.Set("bios", config.Bios)
+	d.Set("smbios1", config.Smbios1)
 	d.Set("onboot", config.Onboot)
 	d.Set("tablet", config.Tablet)
 	d.Set("boot", config.Boot)
